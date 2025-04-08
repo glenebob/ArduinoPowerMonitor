@@ -1,6 +1,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <avr/interrupt.h>
+
+#include "Types.h"
+#include "Abort.h"
 #include "Task.h"
 
 typedef struct
@@ -18,7 +22,7 @@ struct
     {
         task_handler_t handler;
         void *arguments;
-    } tasks[20];
+    } tasks[10];
 } task_queue;
 
 void task_queue_init()
@@ -28,11 +32,18 @@ void task_queue_init()
     task_queue.next_out = -1;
 }
 
+void task_queue_push_interrupts(task_handler_t handler, void *arguments)
+{
+    cli();
+    task_queue_push(handler, arguments);
+    sei();
+}
+
 void task_queue_push(task_handler_t handler, void *arguments)
 {
     if (task_queue.next_in == task_queue.next_out)
     {
-        abort();
+        die();
     }
 
     task_queue.tasks[task_queue.next_in].handler = handler;
@@ -53,11 +64,20 @@ void task_queue_push(task_handler_t handler, void *arguments)
     }
 }
 
-int task_queue_pop(task_handler_t *handler, void **arguments)
+bool task_queue_pop_interrupts(task_handler_t *handler, void **arguments)
+{
+    cli();
+    bool result = task_queue_pop(handler, arguments);
+    sei();
+
+    return result;
+}
+
+bool task_queue_pop(task_handler_t *handler, void **arguments)
 {
     if (task_queue.next_out == -1)
     {
-        return 0;
+        return false;
     }
 
     *handler = task_queue.tasks[task_queue.next_out].handler;
@@ -74,6 +94,6 @@ int task_queue_pop(task_handler_t *handler, void **arguments)
     {
         task_queue.next_out = -1;
     }
-    
-    return 1;
+
+    return true;
 }

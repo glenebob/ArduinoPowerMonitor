@@ -4,6 +4,7 @@
 #include <avr/interrupt.h>
 
 #include "Types.h"
+#include "Abort.h"
 #include "Task.h"
 #include "SoftwareTimer.h"
 
@@ -22,7 +23,7 @@ struct
     uint8_t last;
     int8_t first_free;
     int8_t first_active;
-    timer_t timers[20];
+    timer_t timers[10];
 } timers;
 
 void timers_init()
@@ -49,14 +50,21 @@ void timers_init()
     TIMSK0 |= 1 << TOIE0; // Interrupt on Overflow
 }
 
+uint8_t timers_add_interrupts(task_handler_t handler, void *arguments, uint16_t ellapsed, bool recurring)
+{
+    cli();
+    uint8_t result = timers_add(handler, arguments, ellapsed, recurring);
+    sei();
+
+    return result;
+}
+
 uint8_t timers_add(task_handler_t handler, void *arguments, uint16_t ellapsed, bool recurring)
 {
     if (timers.first_free == -1)
     {
-        abort();
+        die();
     }
-
-    cli();
     
     uint8_t timer_index = timers.first_free;
     timer_t *new_timer = &timers.timers[timer_index];
@@ -80,9 +88,14 @@ uint8_t timers_add(task_handler_t handler, void *arguments, uint16_t ellapsed, b
     new_timer->elapsed = 0;
     new_timer->recurring = recurring;
     
-    sei();
-    
     return timer_index;
+}
+
+void timers_cancel_interrupts(uint8_t timer_id)
+{
+    cli();
+    timers_cancel(timer_id);
+    sei();
 }
 
 void timers_cancel(uint8_t timer_id)
@@ -105,10 +118,9 @@ void timers_cancel(uint8_t timer_id)
                 timers.first_active = timer->next;
             }
 
-            timers.first_free = timer_index;
-            timer_index = timer->next;
             timer->next = timers.first_free;
-            
+            timers.first_free = timer_index;
+
             return;
         }
         else
@@ -120,7 +132,7 @@ void timers_cancel(uint8_t timer_id)
     }
 }
 
-void timers_process_active()
+ISR(TIMER0_OVF_vect)
 {
     int8_t last_timer_index = -1;
     timer_t *last_timer = NULL;
@@ -135,9 +147,12 @@ void timers_process_active()
         {
             if (!timer->recurring)
             {
+                int8_t next_timer_index = timer->next;
+
                 if (last_timer_index >= 0)
                 {
                     last_timer->next = timer->next;
+
                     last_timer_index = -1;
                     last_timer = NULL;
                 }
@@ -146,9 +161,10 @@ void timers_process_active()
                     timers.first_active = timer->next;
                 }
 
-                timers.first_free = timer_index;
-                timer_index = timer->next;
                 timer->next = timers.first_free;
+                timers.first_free = timer_index;
+
+                timer_index = next_timer_index;
             }
             else
             {
@@ -164,9 +180,4 @@ void timers_process_active()
             timer_index = timer->next;
         }
     }
-}
-
-ISR(TIMER0_OVF_vect)
-{
-    timers_process_active();
 }

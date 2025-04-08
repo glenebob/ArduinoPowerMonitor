@@ -9,6 +9,7 @@
 #include "Task.h"
 #include "SoftwareTimer.h"
 #include "AsyncIo.h"
+#include "PowerOut.h"
 #include "PowerMonitor.h"
 #include "Led.h"
 
@@ -17,7 +18,7 @@ static int led_count;
 static void init();
 static void run();
 static void timer_20_ms_handler(void *arguments);
-static void timer_1_s_handler(void *arguments);
+static void current_draw_change(bool current_draw_detected);
 
 int main()
 {
@@ -29,9 +30,11 @@ int main()
 
 static void init()
 {
+    led_init();
     task_queue_init();
     timers_init();
     io_task_init();
+    power_out_init();
     power_monitor_init();
 
     led_count = 0;
@@ -40,26 +43,21 @@ static void init()
     sleep_enable();
 
     timers_add(timer_20_ms_handler, NULL, 20, true);
-    timers_add(timer_1_s_handler, NULL, 1000, true);
-
-    sei();
+    power_monitor_begin(current_draw_change);
 }
 
 static void run()
 {
+    sei();
+
     for (;;)
     {
         sleep_cpu();
 
-        cli();
-
         task_handler_t handler;
         void *arguments;
-        bool have_task = task_queue_pop(&handler, &arguments);
 
-        sei();
-
-        if (have_task)
+        if (task_queue_pop_interrupts(&handler, &arguments))
         {
             handler(arguments);
         }
@@ -126,8 +124,4 @@ static void current_draw_change(bool current_draw_detected)
     led_count = 0;
 }
 
-static void timer_1_s_handler(void *arguments)
-{
-    begin_get_power(current_draw_change);
-}
 
