@@ -6,7 +6,6 @@
 #include "Types.h"
 #include "Abort.h"
 #include "Task.h"
-#include "SoftwareTimer.h"
 
 typedef struct
 {
@@ -23,7 +22,7 @@ struct
     uint8_t last;
     int8_t first_free;
     int8_t first_active;
-    timer_t timers[10];
+    timer_t timers[5];
 } timers;
 
 void timers_init()
@@ -48,15 +47,6 @@ void timers_init()
     TCCR0B |= (1 << CS00) | (1 << CS01);   // Prescaler bit 0 & 1 = prescaler 64
     //  TIMSK0 |= 1 << OCIE0A; // Interrupt on Match OCR0A
     TIMSK0 |= 1 << TOIE0; // Interrupt on Overflow
-}
-
-uint8_t timers_add_interrupts(task_handler_t handler, void *arguments, uint16_t ellapsed, bool recurring)
-{
-    cli();
-    uint8_t result = timers_add(handler, arguments, ellapsed, recurring);
-    sei();
-
-    return result;
 }
 
 uint8_t timers_add(task_handler_t handler, void *arguments, uint16_t ellapsed, bool recurring)
@@ -91,11 +81,13 @@ uint8_t timers_add(task_handler_t handler, void *arguments, uint16_t ellapsed, b
     return timer_index;
 }
 
-void timers_cancel_interrupts(uint8_t timer_id)
+uint8_t timers_add_interrupts(task_handler_t handler, void *arguments, uint16_t ellapsed, bool recurring)
 {
     cli();
-    timers_cancel(timer_id);
+    uint8_t result = timers_add(handler, arguments, ellapsed, recurring);
     sei();
+
+    return result;
 }
 
 void timers_cancel(uint8_t timer_id)
@@ -130,6 +122,13 @@ void timers_cancel(uint8_t timer_id)
             timer_index = timer->next;
         }
     }
+}
+
+void timers_cancel_interrupts(uint8_t timer_id)
+{
+    cli();
+    timers_cancel(timer_id);
+    sei();
 }
 
 ISR(TIMER0_OVF_vect)

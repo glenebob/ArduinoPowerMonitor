@@ -11,8 +11,6 @@ void power_out_on()
     PORTD |= 1 << PORTD2;
 }
 
-typedef void (*reboot)();
-
 void power_out_off()
 {
     PORTD &= ~(1 << PORTD2);

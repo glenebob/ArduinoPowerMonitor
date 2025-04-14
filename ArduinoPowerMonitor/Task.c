@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include <avr/interrupt.h>
+#include <avr/sleep.h>
 
 #include "Types.h"
 #include "Abort.h"
@@ -22,7 +23,7 @@ struct
     {
         task_handler_t handler;
         void *arguments;
-    } tasks[10];
+    } tasks[5];
 } task_queue;
 
 void task_queue_init()
@@ -96,4 +97,25 @@ bool task_queue_pop(task_handler_t *handler, void **arguments)
     }
 
     return true;
+}
+
+void task_queue_run()
+{
+    set_sleep_mode(SLEEP_MODE_IDLE);
+    sleep_enable();
+
+    sei();
+
+    for (;;)
+    {
+        sleep_cpu();
+
+        task_handler_t handler;
+        void *arguments;
+
+        if (task_queue_pop_interrupts(&handler, &arguments))
+        {
+            handler(arguments);
+        }
+    }
 }
