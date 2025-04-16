@@ -27,10 +27,10 @@
 #define PZEM_RESPONSE_BYTE_COUNT_OFFSET 2
 #define PZEM_RESPONSE_VOLTAGE_HIGH_OFFSET 3
 #define PZEM_RESPONSE_VOLTAGE_LOW_OFFSET 4
-#define PZEM_RESPONSE_AMPERAGE_HIGH_HIGH_OFFSET 5
-#define PZEM_RESPONSE_AMPERAGE_HIGH_LOW_OFFSET 6
-#define PZEM_RESPONSE_AMPERAGE_LOW_HIGH_OFFSET 7
-#define PZEM_RESPONSE_AMPERAGE_LOW_LOW_OFFSET 8
+#define PZEM_RESPONSE_AMPERAGE_HIGH_HIGH_OFFSET 7
+#define PZEM_RESPONSE_AMPERAGE_HIGH_LOW_OFFSET 8
+#define PZEM_RESPONSE_AMPERAGE_LOW_HIGH_OFFSET 5
+#define PZEM_RESPONSE_AMPERAGE_LOW_LOW_OFFSET 6
 #define PZEM_RESPONSE_CRC_HIGH_OFFSET 10
 #define PZEM_RESPONSE_CRC_LOW_OFFSET 9
 
@@ -150,13 +150,13 @@ static void get_power_response_data_received(void *completed)
 
     uint16_t volt_reading =
         (get_power_response_with_crc[PZEM_RESPONSE_VOLTAGE_HIGH_OFFSET] << 8) |
-        (get_power_response_with_crc[PZEM_RESPONSE_VOLTAGE_LOW_OFFSET] << 0);
+        get_power_response_with_crc[PZEM_RESPONSE_VOLTAGE_LOW_OFFSET];
 
     uint32_t amp_reading =
-        ((uint32_t) get_power_response_with_crc[PZEM_RESPONSE_AMPERAGE_HIGH_HIGH_OFFSET] << 8) |
-        ((uint32_t) get_power_response_with_crc[PZEM_RESPONSE_AMPERAGE_HIGH_LOW_OFFSET]) |
-        (((uint32_t) get_power_response_with_crc[PZEM_RESPONSE_AMPERAGE_LOW_HIGH_OFFSET]) << 24) |
-        (((uint32_t) get_power_response_with_crc[PZEM_RESPONSE_AMPERAGE_LOW_LOW_OFFSET]) << 16);
+        ((uint32_t) get_power_response_with_crc[PZEM_RESPONSE_AMPERAGE_HIGH_HIGH_OFFSET] << 24) |
+        ((uint32_t) get_power_response_with_crc[PZEM_RESPONSE_AMPERAGE_HIGH_LOW_OFFSET]) << 16 |
+        (get_power_response_with_crc[PZEM_RESPONSE_AMPERAGE_LOW_HIGH_OFFSET] << 8) |
+        get_power_response_with_crc[PZEM_RESPONSE_AMPERAGE_LOW_LOW_OFFSET];
 
     bool current_draw_detected = (volt_reading > 1000 && volt_reading < 2500 && amp_reading > 3000);
     

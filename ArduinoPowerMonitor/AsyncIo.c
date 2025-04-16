@@ -10,7 +10,7 @@
 #include "SoftwareTimer.h"
 
 #define BAUD 9600
-#define BAUDRATE ((F_CPU)/(BAUD*16UL)-1)
+#define BAUDRATE ((F_CPU) / (BAUD * 16UL) -1)
 
 typedef struct
 {
