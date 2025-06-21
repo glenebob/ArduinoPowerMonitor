@@ -160,6 +160,12 @@
     <Compile Include="Abort.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="Interrupts.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Interrupts.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="PowerOut.c">
       <SubType>compile</SubType>
     </Compile>

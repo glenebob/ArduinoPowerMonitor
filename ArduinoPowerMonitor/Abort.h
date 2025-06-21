@@ -1,3 +1,3 @@
 #pragma once
 
-void die();
+void fatal(uint8_t code);

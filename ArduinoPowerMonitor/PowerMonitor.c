@@ -71,7 +71,7 @@ void power_monitor_begin(current_draw_change_handler_t change_handler)
 {
     current_draw_change_handler = change_handler;
 
-    timers_add_interrupts(get_power_timer_handler, NULL, 500, true);
+    timers_add(get_power_timer_handler, NULL, 500, true);
 }
 
 bool is_current_draw_detected()

@@ -5,6 +5,7 @@
 
 #include "Types.h"
 #include "Abort.h"
+#include "Interrupts.h"
 #include "Task.h"
 
 typedef struct
@@ -51,9 +52,11 @@ void timers_init()
 
 uint8_t timers_add(task_handler_t handler, void *arguments, uint16_t ellapsed, bool recurring)
 {
+    interrupts_raise_level();
+    
     if (timers.first_free == -1)
     {
-        die();
+        fatal(4);
     }
     
     uint8_t timer_index = timers.first_free;
@@ -77,21 +80,16 @@ uint8_t timers_add(task_handler_t handler, void *arguments, uint16_t ellapsed, b
     new_timer->trigger = ellapsed;
     new_timer->elapsed = 0;
     new_timer->recurring = recurring;
+
+    interrupts_release_level();
     
     return timer_index;
 }
 
-uint8_t timers_add_interrupts(task_handler_t handler, void *arguments, uint16_t ellapsed, bool recurring)
-{
-    cli();
-    uint8_t result = timers_add(handler, arguments, ellapsed, recurring);
-    sei();
-
-    return result;
-}
-
 void timers_cancel(uint8_t timer_id)
 {
+    interrupts_raise_level();
+
     int8_t last_timer_index = -1;
     timer_t *last_timer = NULL;
 
@@ -113,7 +111,7 @@ void timers_cancel(uint8_t timer_id)
             timer->next = timers.first_free;
             timers.first_free = timer_index;
 
-            return;
+            goto end;
         }
         else
         {
@@ -122,17 +120,15 @@ void timers_cancel(uint8_t timer_id)
             timer_index = timer->next;
         }
     }
-}
 
-void timers_cancel_interrupts(uint8_t timer_id)
-{
-    cli();
-    timers_cancel(timer_id);
-    sei();
+end:
+    interrupts_release_level();
 }
 
 ISR(TIMER0_OVF_vect)
 {
+    interrupts_enter_handler();
+
     int8_t last_timer_index = -1;
     timer_t *last_timer = NULL;
 
@@ -179,4 +175,6 @@ ISR(TIMER0_OVF_vect)
             timer_index = timer->next;
         }
     }
+
+    interrupts_exit_handler();
 }

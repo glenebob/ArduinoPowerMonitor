@@ -1,4 +1,6 @@
 #include "Types.h"
+#include "Abort.h"
+#include "Interrupts.h"
 #include "Task.h"
 #include "SoftwareTimer.h"
 #include "AsyncIo.h"
@@ -10,17 +12,21 @@ static void current_draw_change(bool current_draw_detected);
 
 int main()
 {
+    led_init();
+    power_out_init();
+    interrupts_init();
     task_queue_init();
     timers_init();
     io_task_init();
-    led_init();
-    power_out_init();
     power_monitor_init();
     power_monitor_begin(current_draw_change);
 
     task_queue_run();
 
-    return 0;
+    // We should never get here.
+    fatal(1);
+    
+    // No return.
 }
 
 static void current_draw_change(bool current_draw_detected)

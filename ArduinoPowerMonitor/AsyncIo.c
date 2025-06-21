@@ -6,6 +6,7 @@
 
 #include "Types.h"
 #include "Abort.h"
+#include "Interrupts.h"
 #include "Task.h"
 #include "SoftwareTimer.h"
 
@@ -41,22 +42,22 @@ void io_task_init()
 
 static void io_read_timeout(void *argument)
 {
-    cli();
+    interrupts_raise_level();
 
     read_task.active = false;
 
     task_queue_push(read_task.handler, false);
 
-    sei();
+    interrupts_release_level();
 }
 
 void io_read(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, uint16_t timeout)
 {
-    cli();
+    interrupts_raise_level();
 
     if (read_task.active)
     {
-        die();
+        fatal(2);
     }
 
     read_task.active = true;
@@ -86,27 +87,27 @@ void io_read(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, uin
         read_task.timer_id = -1;
     }
 
-    sei();
+    interrupts_release_level();
 }
 
 static void io_write_timeout(void *argument)
 {
-    cli();
+    interrupts_raise_level();
 
     write_task.active = false;
 
     task_queue_push(write_task.handler, false);
     
-    sei();
+    interrupts_release_level();
 }
 
 void io_write(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, uint16_t timeout)
 {
-    cli();
+    interrupts_raise_level();
 
     if (write_task.active)
     {
-        die();
+        fatal(3);
     }
 
     write_task.active = true;
@@ -136,11 +137,13 @@ void io_write(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, ui
         write_task.timer_id = -1;
     }
     
-    sei();
+    interrupts_release_level();
 }
 
 ISR(USART_RX_vect)
 {
+    interrupts_enter_handler();
+    
     if (read_task.active)
     {
         read_task.buffer[read_task.offset++] = UDR0;
@@ -161,10 +164,14 @@ ISR(USART_RX_vect)
     {
         // Byte dropped/lost.
     }
+
+    interrupts_exit_handler();
 }
 
 ISR(USART_TX_vect)
 {
+    interrupts_enter_handler();
+
     if (write_task.active)
     {
         UDR0 = write_task.buffer[write_task.offset++];
@@ -181,4 +188,6 @@ ISR(USART_TX_vect)
             task_queue_push(write_task.handler, (void*) true);
         }
     }
+
+    interrupts_exit_handler();
 }

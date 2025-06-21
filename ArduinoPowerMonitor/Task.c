@@ -6,6 +6,7 @@
 
 #include "Types.h"
 #include "Abort.h"
+#include "Interrupts.h"
 #include "Task.h"
 
 typedef struct
@@ -33,18 +34,13 @@ void task_queue_init()
     task_queue.next_out = -1;
 }
 
-void task_queue_push_interrupts(task_handler_t handler, void *arguments)
-{
-    cli();
-    task_queue_push(handler, arguments);
-    sei();
-}
-
 void task_queue_push(task_handler_t handler, void *arguments)
 {
+    interrupts_raise_level();
+
     if (task_queue.next_in == task_queue.next_out)
     {
-        die();
+        fatal(5);
     }
 
     task_queue.tasks[task_queue.next_in].handler = handler;
@@ -63,21 +59,18 @@ void task_queue_push(task_handler_t handler, void *arguments)
     {
         ++task_queue.next_in;
     }
-}
 
-bool task_queue_pop_interrupts(task_handler_t *handler, void **arguments)
-{
-    cli();
-    bool result = task_queue_pop(handler, arguments);
-    sei();
-
-    return result;
+    interrupts_release_level();
 }
 
 bool task_queue_pop(task_handler_t *handler, void **arguments)
 {
+    interrupts_raise_level();
+
     if (task_queue.next_out == -1)
     {
+        interrupts_release_level();
+
         return false;
     }
 
@@ -96,6 +89,8 @@ bool task_queue_pop(task_handler_t *handler, void **arguments)
         task_queue.next_out = -1;
     }
 
+    interrupts_release_level();
+
     return true;
 }
 
@@ -104,7 +99,9 @@ void task_queue_run()
     set_sleep_mode(SLEEP_MODE_IDLE);
     sleep_enable();
 
-    sei();
+    // Interrupt Level initializes to 1 because interrupts are off at boot.
+    // This lowers it to zero and enables interrupts for the first time.
+    interrupts_release_level();
 
     for (;;)
     {
@@ -113,7 +110,7 @@ void task_queue_run()
         task_handler_t handler;
         void *arguments;
 
-        if (task_queue_pop_interrupts(&handler, &arguments))
+        if (task_queue_pop(&handler, &arguments))
         {
             handler(arguments);
         }
