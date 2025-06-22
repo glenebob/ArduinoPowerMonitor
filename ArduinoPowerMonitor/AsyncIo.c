@@ -5,8 +5,9 @@
 #include <avr/io.h>
 
 #include "Types.h"
+#include "Error.h"
 #include "Abort.h"
-#include "Interrupts.h"
+#include "Interrupt.h"
 #include "Task.h"
 #include "SoftwareTimer.h"
 
@@ -42,22 +43,22 @@ void io_task_init()
 
 static void io_read_timeout(void *argument)
 {
-    interrupts_raise_level();
+    interrupt_raise_level();
 
     read_task.active = false;
 
     task_queue_push(read_task.handler, false);
 
-    interrupts_release_level();
+    interrupt_release_level();
 }
 
 void io_read(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, uint16_t timeout)
 {
-    interrupts_raise_level();
+    interrupt_raise_level();
 
     if (read_task.active)
     {
-        fatal(2);
+        fatal(ERR_IO_READ_DUP);
     }
 
     read_task.active = true;
@@ -80,34 +81,34 @@ void io_read(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, uin
 
     if (read_task.active && timeout > 0)
     {
-        read_task.timer_id = timers_add(io_read_timeout, NULL, timeout, false);
+        read_task.timer_id = timer_add(io_read_timeout, NULL, timeout, false);
     }
     else
     {
         read_task.timer_id = -1;
     }
 
-    interrupts_release_level();
+    interrupt_release_level();
 }
 
 static void io_write_timeout(void *argument)
 {
-    interrupts_raise_level();
+    interrupt_raise_level();
 
     write_task.active = false;
 
     task_queue_push(write_task.handler, false);
     
-    interrupts_release_level();
+    interrupt_release_level();
 }
 
 void io_write(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, uint16_t timeout)
 {
-    interrupts_raise_level();
+    interrupt_raise_level();
 
     if (write_task.active)
     {
-        fatal(3);
+        fatal(ERR_IO_WRITE_DUP);
     }
 
     write_task.active = true;
@@ -128,21 +129,21 @@ void io_write(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, ui
         }
     }
 
-    if (write_task.active && timeout >= 0)
+    if (write_task.active && timeout > 0)
     {
-        write_task.timer_id = timers_add(io_write_timeout, NULL, timeout, false);
+        write_task.timer_id = timer_add(io_write_timeout, NULL, timeout, false);
     }
     else
     {
         write_task.timer_id = -1;
     }
     
-    interrupts_release_level();
+    interrupt_release_level();
 }
 
 ISR(USART_RX_vect)
 {
-    interrupts_enter_handler();
+    interrupt_enter_handler();
     
     if (read_task.active)
     {
@@ -154,7 +155,7 @@ ISR(USART_RX_vect)
 
             if (read_task.timer_id >= 0)
             {
-                timers_cancel(read_task.timer_id);
+                timer_cancel(read_task.timer_id);
             }
 
             task_queue_push(read_task.handler, (void*) true);
@@ -165,12 +166,12 @@ ISR(USART_RX_vect)
         // Byte dropped/lost.
     }
 
-    interrupts_exit_handler();
+    interrupt_exit_handler();
 }
 
 ISR(USART_TX_vect)
 {
-    interrupts_enter_handler();
+    interrupt_enter_handler();
 
     if (write_task.active)
     {
@@ -182,12 +183,12 @@ ISR(USART_TX_vect)
 
             if (write_task.timer_id >= 0)
             {
-                timers_cancel(write_task.timer_id);
+                timer_cancel(write_task.timer_id);
             }
 
             task_queue_push(write_task.handler, (void*) true);
         }
     }
 
-    interrupts_exit_handler();
+    interrupt_exit_handler();
 }

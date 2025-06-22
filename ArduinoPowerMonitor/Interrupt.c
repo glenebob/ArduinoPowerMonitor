@@ -2,47 +2,53 @@
 
 #include <avr/interrupt.h>
 
+#include "Error.h"
 #include "Abort.h"
 
 static uint8_t interruptLevel;
 
-void interrupts_init()
+void interrupt_init()
 {
     interruptLevel = 1;
 }
 
-void interrupts_enter_handler()
+void interrupt_enter_handler()
 {
     if (interruptLevel)
     {
-        fatal(10);
+        fatal(ERR_INT_ENTER_BAD_LEVEL);
     }
 
     ++interruptLevel;
 }
 
-void interrupts_exit_handler()
+void interrupt_exit_handler()
 {
     if (interruptLevel != 1)
     {
-        fatal(11);
+        fatal(ERR_INT_EXIT_BAD_LEVEL);
     }
 
     --interruptLevel;
 }
 
-void interrupts_raise_level()
+void interrupt_raise_level()
 {
     cli();
+
+    if (interruptLevel == 0xFF)
+    {
+        fatal(ERR_INT_RAISE_BAD_LEVEL);
+    }
     
     ++interruptLevel;
 }
 
-void interrupts_release_level()
+void interrupt_release_level()
 {
     if (!interruptLevel)
     {
-        fatal(12);
+        fatal(ERR_INT_RELEASE_BAD_LEVEL);
     }
     
     --interruptLevel;

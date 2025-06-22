@@ -46,7 +46,7 @@ static uint8_t get_power_request_with_crc[] =
 };
 
 static uint8_t get_power_response_with_crc[11];
-static bool last_current_draw_detected;
+static int8_t last_current_draw_detected;
 static current_draw_change_handler_t current_draw_change_handler;
 
 static void get_power_request_sent(void *completed);
@@ -58,7 +58,7 @@ static void get_power_timer_handler(void *parameters);
 
 void power_monitor_init(current_draw_change_handler_t change_handler)
 {
-    last_current_draw_detected = false;
+    last_current_draw_detected = -1;
     current_draw_change_handler = NULL;
 
     uint16_t crc = crc16(get_power_request_with_crc, sizeof(get_power_request_with_crc) - sizeof(uint16_t));
@@ -71,7 +71,7 @@ void power_monitor_begin(current_draw_change_handler_t change_handler)
 {
     current_draw_change_handler = change_handler;
 
-    timers_add(get_power_timer_handler, NULL, 500, true);
+    timer_add(get_power_timer_handler, NULL, 500, true);
 }
 
 bool is_current_draw_detected()

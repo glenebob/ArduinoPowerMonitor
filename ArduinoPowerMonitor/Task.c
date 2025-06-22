@@ -5,8 +5,9 @@
 #include <avr/sleep.h>
 
 #include "Types.h"
+#include "Error.h"
 #include "Abort.h"
-#include "Interrupts.h"
+#include "Interrupt.h"
 #include "Task.h"
 
 typedef struct
@@ -36,11 +37,11 @@ void task_queue_init()
 
 void task_queue_push(task_handler_t handler, void *arguments)
 {
-    interrupts_raise_level();
+    interrupt_raise_level();
 
     if (task_queue.next_in == task_queue.next_out)
     {
-        fatal(5);
+        fatal(ERR_TASK_TABLE_FULL);
     }
 
     task_queue.tasks[task_queue.next_in].handler = handler;
@@ -60,16 +61,16 @@ void task_queue_push(task_handler_t handler, void *arguments)
         ++task_queue.next_in;
     }
 
-    interrupts_release_level();
+    interrupt_release_level();
 }
 
 bool task_queue_pop(task_handler_t *handler, void **arguments)
 {
-    interrupts_raise_level();
+    interrupt_raise_level();
 
     if (task_queue.next_out == -1)
     {
-        interrupts_release_level();
+        interrupt_release_level();
 
         return false;
     }
@@ -89,7 +90,7 @@ bool task_queue_pop(task_handler_t *handler, void **arguments)
         task_queue.next_out = -1;
     }
 
-    interrupts_release_level();
+    interrupt_release_level();
 
     return true;
 }
@@ -101,7 +102,7 @@ void task_queue_run()
 
     // Interrupt Level initializes to 1 because interrupts are off at boot.
     // This lowers it to zero and enables interrupts for the first time.
-    interrupts_release_level();
+    interrupt_release_level();
 
     for (;;)
     {

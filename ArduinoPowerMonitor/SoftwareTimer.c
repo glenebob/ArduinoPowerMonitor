@@ -4,8 +4,9 @@
 #include <avr/interrupt.h>
 
 #include "Types.h"
+#include "Error.h"
 #include "Abort.h"
-#include "Interrupts.h"
+#include "Interrupt.h"
 #include "Task.h"
 
 typedef struct
@@ -26,7 +27,7 @@ struct
     timer_t timers[5];
 } timers;
 
-void timers_init()
+void timer_init()
 {
     timers.last = sizeof(timers.timers) / sizeof(timers.timers[0]) - 1;
     timers.first_free = 0;
@@ -50,13 +51,13 @@ void timers_init()
     TIMSK0 |= 1 << TOIE0; // Interrupt on Overflow
 }
 
-uint8_t timers_add(task_handler_t handler, void *arguments, uint16_t ellapsed, bool recurring)
+uint8_t timer_add(task_handler_t handler, void *arguments, uint16_t ellapsed, bool recurring)
 {
-    interrupts_raise_level();
+    interrupt_raise_level();
     
     if (timers.first_free == -1)
     {
-        fatal(4);
+        fatal(ERR_TIMER_TABLE_FULL);
     }
     
     uint8_t timer_index = timers.first_free;
@@ -81,14 +82,14 @@ uint8_t timers_add(task_handler_t handler, void *arguments, uint16_t ellapsed, b
     new_timer->elapsed = 0;
     new_timer->recurring = recurring;
 
-    interrupts_release_level();
+    interrupt_release_level();
     
     return timer_index;
 }
 
-void timers_cancel(uint8_t timer_id)
+void timer_cancel(uint8_t timer_id)
 {
-    interrupts_raise_level();
+    interrupt_raise_level();
 
     int8_t last_timer_index = -1;
     timer_t *last_timer = NULL;
@@ -122,12 +123,12 @@ void timers_cancel(uint8_t timer_id)
     }
 
 end:
-    interrupts_release_level();
+    interrupt_release_level();
 }
 
 ISR(TIMER0_OVF_vect)
 {
-    interrupts_enter_handler();
+    interrupt_enter_handler();
 
     int8_t last_timer_index = -1;
     timer_t *last_timer = NULL;
@@ -176,5 +177,5 @@ ISR(TIMER0_OVF_vect)
         }
     }
 
-    interrupts_exit_handler();
+    interrupt_exit_handler();
 }
