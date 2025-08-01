@@ -1,5 +1,4 @@
 #include "Types.h"
-#include "Abort.h"
 #include "Interrupt.h"
 #include "Task.h"
 #include "SoftwareTimer.h"
@@ -21,9 +20,7 @@ int main()
     power_monitor_init();
     power_monitor_begin(current_draw_change);
 
-    task_queue_run();
-    
-    // No return.
+    task_queue_run(); // Never returns
 }
 
 static void current_draw_change(bool current_draw_detected)

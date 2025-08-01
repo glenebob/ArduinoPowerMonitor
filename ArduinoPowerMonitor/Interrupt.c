@@ -12,11 +12,22 @@ void interrupt_init()
     interruptLevel = 1;
 }
 
+void interrupt_boot()
+{
+    if (interruptLevel != 1)
+    {
+        abort(ERR_INT_BOOT_BAD_LEVEL);
+    }
+
+    --interruptLevel;
+    sei();
+}
+
 void interrupt_enter_handler()
 {
     if (interruptLevel)
     {
-        fatal(ERR_INT_ENTER_BAD_LEVEL);
+        abort(ERR_INT_ENTER_BAD_LEVEL);
     }
 
     ++interruptLevel;
@@ -26,7 +37,7 @@ void interrupt_exit_handler()
 {
     if (interruptLevel != 1)
     {
-        fatal(ERR_INT_EXIT_BAD_LEVEL);
+        abort(ERR_INT_EXIT_BAD_LEVEL);
     }
 
     --interruptLevel;
@@ -38,7 +49,7 @@ void interrupt_raise_level()
 
     if (interruptLevel == 0xFF)
     {
-        fatal(ERR_INT_RAISE_BAD_LEVEL);
+        abort(ERR_INT_RAISE_BAD_LEVEL);
     }
     
     ++interruptLevel;
@@ -48,7 +59,7 @@ void interrupt_release_level()
 {
     if (!interruptLevel)
     {
-        fatal(ERR_INT_RELEASE_BAD_LEVEL);
+        abort(ERR_INT_RELEASE_BAD_LEVEL);
     }
     
     --interruptLevel;

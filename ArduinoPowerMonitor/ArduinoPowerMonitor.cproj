@@ -161,6 +161,9 @@
     <Compile Include="Abort.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="Bits.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="Error.h">
       <SubType>compile</SubType>
     </Compile>

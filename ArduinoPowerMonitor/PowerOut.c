@@ -1,17 +1,19 @@
 #include <avr/io.h>
 
+#include "Bits.h"
+
 void power_out_init()
 {
-    DDRD |= 1 << DDD2;
-    PORTD &= ~(1 << PORTD2);
+    DDRD |= BIT2;
+    PORTD &= ~BIT2;
 }
 
 void power_out_on()
 {
-    PORTD |= 1 << PORTD2;
+    PORTD |= BIT2;
 }
 
 void power_out_off()
 {
-    PORTD &= ~(1 << PORTD2);
+    PORTD &= ~BIT2;
 }

@@ -8,6 +8,7 @@
 #include "Abort.h"
 #include "Interrupt.h"
 #include "Task.h"
+#include "Bits.h"
 
 typedef struct
 {
@@ -43,12 +44,12 @@ void timer_init()
     OCR0A = 250; // Match value, with prescaler 64, the timer will tick every 1 ms.
     //	TCNT0 = 0;
     //  TCCR0A |= 1 << COM0A1;
-    TCCR0A |= 1 << WGM00; // Wave Generation Mode = PWM, phase correct
-    TCCR0A |= 1 << WGM01; // Wave Generation Mode = CTC
-    TCCR0B |= 1 << WGM02; // Wave Generation Mode = PWM, phase correct
-    TCCR0B |= (1 << CS00) | (1 << CS01);   // Prescaler bit 0 & 1 = prescaler 64
+    TCCR0A |= BIT0; // Wave Generation Mode = PWM, phase correct
+    TCCR0A |= BIT1; // Wave Generation Mode = CTC
+    TCCR0B |= BIT3; // Wave Generation Mode = PWM, phase correct
+    TCCR0B |= BIT0 | BIT1; // Prescaler bit 0 & 1 = prescaler 64
     //  TIMSK0 |= 1 << OCIE0A; // Interrupt on Match OCR0A
-    TIMSK0 |= 1 << TOIE0; // Interrupt on Overflow
+    TIMSK0 |= BIT0; // Interrupt on Overflow
 }
 
 uint8_t timer_add(task_handler_t handler, void *arguments, uint16_t ellapsed, bool recurring)
@@ -57,7 +58,7 @@ uint8_t timer_add(task_handler_t handler, void *arguments, uint16_t ellapsed, bo
     
     if (timers.first_free == -1)
     {
-        fatal(ERR_TIMER_TABLE_FULL);
+        abort(ERR_TIMER_TABLE_FULL);
     }
     
     uint8_t timer_index = timers.first_free;

@@ -42,7 +42,7 @@ static uint8_t get_power_request_with_crc[] =
     PZEM_VOLTAGE_REGISTER_ADDRESS_LOW,
     PZEM_REGISTER_READ_COUNT_HIGH,
     PZEM_REGISTER_READ_COUNT_LOW,
-    0x00, 0x00 // CRC high and low, calculated at runtime
+    0x00, 0x00 // CRC low and high, calculated at runtime
 };
 
 static uint8_t get_power_response_with_crc[11];

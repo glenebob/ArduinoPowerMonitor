@@ -41,7 +41,7 @@ void task_queue_push(task_handler_t handler, void *arguments)
 
     if (task_queue.next_in == task_queue.next_out)
     {
-        fatal(ERR_TASK_TABLE_FULL);
+        abort(ERR_TASK_TABLE_FULL);
     }
 
     task_queue.tasks[task_queue.next_in].handler = handler;
@@ -100,9 +100,7 @@ void task_queue_run()
     set_sleep_mode(SLEEP_MODE_IDLE);
     sleep_enable();
 
-    // Interrupt Level initializes to 1 because interrupts are off at boot.
-    // This lowers it to zero and enables interrupts for the first time.
-    interrupt_release_level();
+    interrupt_boot();
 
     for (;;)
     {
@@ -111,7 +109,7 @@ void task_queue_run()
         task_handler_t handler;
         void *arguments;
 
-        if (task_queue_pop(&handler, &arguments))
+        while (task_queue_pop(&handler, &arguments))
         {
             handler(arguments);
         }

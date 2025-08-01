@@ -1,17 +1,19 @@
 #include <avr/io.h>
 
+#include "Bits.h"
+
 void led_init()
 {
-    DDRB |= 1 << DDB5;
-    PORTB &= ~(1 << PORTB5);
+    DDRB |= BIT5;
+    PORTB &= ~BIT5;
 }
 
 void led_on()
 {
-    PORTB |= 1 << PORTB5;
+    PORTB |= BIT5;
 }
 
 void led_off()
-{
-    PORTB &= ~(1 << PORTB5);
+{   
+    PORTB &= ~BIT5;
 }
