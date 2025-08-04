@@ -1,3 +1,5 @@
+#pragma once
+
 #define BIT0 0b00000001
 #define BIT1 0b00000010
 #define BIT2 0b00000100
