@@ -5,7 +5,6 @@
 
 #include "Types.h"
 #include "Error.h"
-#include "Abort.h"
 #include "Interrupt.h"
 #include "Task.h"
 #include "Bits.h"
@@ -26,20 +25,20 @@ struct
     int8_t first_free;
     int8_t first_active;
     timer_t timers[5];
-} timers;
+} timer_table;
 
 void timer_init()
 {
-    timers.last = sizeof(timers.timers) / sizeof(timers.timers[0]) - 1;
-    timers.first_free = 0;
-    timers.first_active = -1;
+    timer_table.last = sizeof(timer_table.timers) / sizeof(timer_table.timers[0]) - 1;
+    timer_table.first_free = 0;
+    timer_table.first_active = -1;
     
-    for (uint8_t i = 0; i < timers.last; ++i)
+    for (uint8_t i = 0; i < timer_table.last; ++i)
     {
-        timers.timers[i].next = i + 1;
+        timer_table.timers[i].next = i + 1;
     }
 
-    timers.timers[timers.last].next = -1;
+    timer_table.timers[timer_table.last].next = -1;
 
     OCR0A = 250; // Match value, with prescaler 64, the timer will tick every 1 ms.
     //	TCNT0 = 0;
@@ -56,26 +55,26 @@ uint8_t timer_add(task_handler_t handler, void *arguments, uint16_t ellapsed, bo
 {
     interrupt_raise_level();
     
-    if (timers.first_free == -1)
+    if (timer_table.first_free == -1)
     {
-        abort(ERR_TIMER_TABLE_FULL);
+        exit(ERR_TIMER_TABLE_FULL);
     }
     
-    uint8_t timer_index = timers.first_free;
-    timer_t *new_timer = &timers.timers[timer_index];
+    uint8_t timer_index = timer_table.first_free;
+    timer_t *new_timer = &timer_table.timers[timer_index];
 
-    timers.first_free = new_timer->next;
+    timer_table.first_free = new_timer->next;
     
-    if (timers.first_active >= 0)
+    if (timer_table.first_active >= 0)
     {
-        new_timer->next = timers.first_active;
+        new_timer->next = timer_table.first_active;
     }
     else
     {
         new_timer->next = -1;
     }
 
-    timers.first_active = timer_index;
+    timer_table.first_active = timer_index;
     
     new_timer->handler = handler;
     new_timer->arguments = arguments;
@@ -95,9 +94,9 @@ void timer_cancel(uint8_t timer_id)
     int8_t last_timer_index = -1;
     timer_t *last_timer = NULL;
 
-    for (int8_t timer_index = timers.first_active; timer_index >= 0; )
+    for (int8_t timer_index = timer_table.first_active; timer_index >= 0; )
     {
-        timer_t *timer = &timers.timers[timer_index];
+        timer_t *timer = &timer_table.timers[timer_index];
 
         if (timer_index == timer_id)
         {
@@ -107,11 +106,11 @@ void timer_cancel(uint8_t timer_id)
             }
             else
             {
-                timers.first_active = timer->next;
+                timer_table.first_active = timer->next;
             }
 
-            timer->next = timers.first_free;
-            timers.first_free = timer_index;
+            timer->next = timer_table.first_free;
+            timer_table.first_free = timer_index;
 
             goto end;
         }
@@ -134,9 +133,9 @@ ISR(TIMER0_OVF_vect)
     int8_t last_timer_index = -1;
     timer_t *last_timer = NULL;
 
-    for (int8_t timer_index = timers.first_active; timer_index >= 0; )
+    for (int8_t timer_index = timer_table.first_active; timer_index >= 0; )
     {
-        timer_t *timer = &timers.timers[timer_index];
+        timer_t *timer = &timer_table.timers[timer_index];
 
         ++timer->elapsed;
         
@@ -155,11 +154,11 @@ ISR(TIMER0_OVF_vect)
                 }
                 else
                 {
-                    timers.first_active = timer->next;
+                    timer_table.first_active = timer->next;
                 }
 
-                timer->next = timers.first_free;
-                timers.first_free = timer_index;
+                timer->next = timer_table.first_free;
+                timer_table.first_free = timer_index;
 
                 timer_index = next_timer_index;
             }

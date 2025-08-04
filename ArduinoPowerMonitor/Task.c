@@ -6,15 +6,8 @@
 
 #include "Types.h"
 #include "Error.h"
-#include "Abort.h"
 #include "Interrupt.h"
 #include "Task.h"
-
-typedef struct
-{
-    task_handler_t handler;
-    void *arguments;
-} task_t;
 
 struct
 {
@@ -41,7 +34,7 @@ void task_queue_push(task_handler_t handler, void *arguments)
 
     if (task_queue.next_in == task_queue.next_out)
     {
-        abort(ERR_TASK_TABLE_FULL);
+        exit(ERR_TASK_QUEUE_FULL);
     }
 
     task_queue.tasks[task_queue.next_in].handler = handler;

@@ -6,7 +6,6 @@
 
 #include "Types.h"
 #include "Error.h"
-#include "Abort.h"
 #include "Interrupt.h"
 #include "Task.h"
 #include "SoftwareTimer.h"
@@ -58,7 +57,7 @@ void io_read(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, uin
 
     if (read_task.active)
     {
-        abort(ERR_IO_READ_DUP);
+        exit(ERR_IO_READ_DUP);
     }
 
     read_task.active = true;
@@ -108,7 +107,7 @@ void io_write(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, ui
 
     if (write_task.active)
     {
-        abort(ERR_IO_WRITE_DUP);
+        exit(ERR_IO_WRITE_DUP);
     }
 
     write_task.active = true;

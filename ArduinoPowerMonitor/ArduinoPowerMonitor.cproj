@@ -149,9 +149,6 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Abort.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="AsyncIo.c">
       <SubType>compile</SubType>
     </Compile>

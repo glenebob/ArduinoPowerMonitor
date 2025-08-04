@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include "Types.h"
-#include "Abort.h"
 #include "SoftwareTimer.h"
 #include "ModBusCrc16.h"
 #include "AsyncIo.h"
