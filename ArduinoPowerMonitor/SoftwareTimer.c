@@ -143,8 +143,6 @@ ISR(TIMER0_OVF_vect)
         {
             if (!timer->recurring)
             {
-                int8_t next_timer_index = timer->next;
-
                 if (last_timer_index >= 0)
                 {
                     last_timer->next = timer->next;
@@ -157,6 +155,8 @@ ISR(TIMER0_OVF_vect)
                     timer_table.first_active = timer->next;
                 }
 
+                int8_t next_timer_index = timer->next;
+
                 timer->next = timer_table.first_free;
                 timer_table.first_free = timer_index;
 
@@ -165,6 +165,8 @@ ISR(TIMER0_OVF_vect)
             else
             {
                 timer->elapsed = 0;
+
+                timer_index = timer->next;
             }
 
             task_queue_push(timer->handler, timer->arguments);
