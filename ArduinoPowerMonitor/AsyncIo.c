@@ -55,7 +55,7 @@ void io_read(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, uin
 {
     interrupt_raise_level();
 
-    if (read_task.active)
+    if (read_task.active || write_task.active)
     {
         exit(ERR_IO_READ_DUP);
     }
@@ -105,7 +105,7 @@ void io_write(uint8_t *buffer, uint8_t buffer_length, task_handler_t handler, ui
 {
     interrupt_raise_level();
 
-    if (write_task.active)
+    if (write_task.active || read_task.active)
     {
         exit(ERR_IO_WRITE_DUP);
     }
