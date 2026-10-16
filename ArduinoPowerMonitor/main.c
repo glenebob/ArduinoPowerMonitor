@@ -1,12 +1,54 @@
-#include "Types.h"
-#include "Interrupt.h"
-#include "Task.h"
-#include "SoftwareTimer.h"
-#include "AsyncIo.h"
-#include "Led.h"
-#include "PowerOut.h"
-#include "PowerMonitor.h"
+#include <stdint.h>
+#include <string.h>
 
+#include <avr/pgmspace.h>
+
+#include "Application.h"
+#include "Types.h"
+#include "Thread.h"
+#include "Context.h"
+#include "Bits.h"
+
+#ifdef TEST
+extern uint8_t _end;
+#endif
+
+__attribute__((OS_main))
+int main(void)
+{
+#ifdef TEST
+    for (uint8_t *address = &_end; address <= (uint8_t*) 0x08FD; ++address)
+    {
+        *address = 0;
+    }
+
+    static const __flash char string_main[] PROGMEM = "Main!";
+
+    char status[sizeof(string_main) - 1];
+
+    memcpy_P(status, string_main, sizeof(status));
+#endif
+
+    DDRB |= BIT5;
+    PORTB &= ~BIT5;
+
+    threads_initialize();
+
+    JUMP(thread_kernel_entry);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 static void current_draw_change(bool current_draw_detected);
 
 int main()
@@ -34,3 +76,4 @@ static void current_draw_change(bool current_draw_detected)
         power_out_on();
     }
 }
+*/
